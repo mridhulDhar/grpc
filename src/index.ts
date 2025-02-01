@@ -29,9 +29,40 @@ function addPerson(call, callback) {
     callback(null, person)
 }
 
+//@ts-ignore
+function getPersonByName(call, callback) {
+    try {
+        const name = call.request.name; // Extract name from the request
+    
+        // Find the person by name
+        const person = PERSONS.find((p) => p.name === name);
+    
+        if (person) {
+          callback(null, person); // Return the found person
+        } else {
+          // If no person is found, return a NOT_FOUND error
+          callback({
+            code: grpc.status.NOT_FOUND,
+            message: `Person with name '${name}' not found`,
+          });
+        }
+      } catch (error) {
+        // Handle unexpected errors
+        console.error('Error in GetPersonByName:', error);
+        callback({
+          code: grpc.status.INTERNAL,
+          message: 'An internal server error occurred',
+        });
+      }
+  }
+
 const server = new grpc.Server();
 
-server.addService((personProto.AddressBookService as ServiceClientConstructor).service, { addPerson: addPerson });
+server.addService((personProto.AddressBookService as ServiceClientConstructor).service, 
+{ 
+    addPerson: addPerson,
+    getPersonByName: getPersonByName 
+ });
 server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
     server.start();
 });
